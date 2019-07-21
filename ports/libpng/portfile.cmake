@@ -42,6 +42,7 @@ vcpkg_from_github(
         pkgconfig.patch
         pkgconfig.2.patch
         ${APNG_EXTRA_PATCH}
+        9999-mssdk+llvm-toolset-build.patch
 )
 
 if(VCPKG_LIBRARY_LINKAGE STREQUAL dynamic)

@@ -1,0 +1,13 @@
+diff --git a/lib/iconv.c b/lib/iconv.c
+index 31853a7..9cb6c9d 100644
+--- a/lib/iconv.c
++++ b/lib/iconv.c
+@@ -248,7 +248,7 @@ invalid:
+ }
+ 
+ size_t iconv (iconv_t icd,
+-              ICONV_CONST char* * inbuf, size_t *inbytesleft,
++              char* * inbuf, size_t *inbytesleft,
+               char* * outbuf, size_t *outbytesleft)
+ {
+   conv_t cd = (conv_t) icd;

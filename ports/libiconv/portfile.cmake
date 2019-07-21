@@ -19,6 +19,8 @@ vcpkg_extract_source_archive_ex(
     PATCHES
         0002-Config-for-MSVC.patch
         0003-Add-export.patch
+
+        9999-mssdk+llvm-toolset-build.patch
 )
 
 #Since libiconv uses automake, make and configure, we use a custom CMake file

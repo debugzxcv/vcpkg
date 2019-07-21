@@ -14,6 +14,7 @@ vcpkg_extract_source_archive_ex(
         0003-Fix-UWP.patch
         pkgconfig.patch
         brotli-static.patch
+        9999-copyright-mark.patch
 )
 
 vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS

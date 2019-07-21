@@ -1,0 +1,13 @@
+diff --git a/include/libxml/xmlexports.h b/include/libxml/xmlexports.h
+index f03af0d..45bb708 100644
+--- a/include/libxml/xmlexports.h
++++ b/include/libxml/xmlexports.h
+@@ -58,7 +58,7 @@
+   #undef XMLCDECL
+   #if defined(IN_LIBXML) && !defined(LIBXML_STATIC)
+     #define XMLPUBFUN __declspec(dllexport)
+-    #define XMLPUBVAR __declspec(dllexport)
++    #define XMLPUBVAR __declspec(dllexport) extern
+   #else
+     #define XMLPUBFUN
+     #if !defined(LIBXML_STATIC)

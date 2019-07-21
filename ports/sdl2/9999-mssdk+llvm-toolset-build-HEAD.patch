@@ -1,0 +1,38 @@
+diff --git a/include/SDL_cpuinfo.h b/include/SDL_cpuinfo.h
+index efbf6ff..fc3440e 100644
+--- a/include/SDL_cpuinfo.h
++++ b/include/SDL_cpuinfo.h
+@@ -33,12 +33,6 @@
+ /* Need to do this here because intrin.h has C++ code in it */
+ /* Visual Studio 2005 has a bug where intrin.h conflicts with winnt.h */
+ #if defined(_MSC_VER) && (_MSC_VER >= 1500) && (defined(_M_IX86) || defined(_M_X64))
+-#ifdef __clang__
+-/* Many of the intrinsics SDL uses are not implemented by clang with Visual Studio */
+-#undef __MMX__
+-#undef __SSE__
+-#undef __SSE2__
+-#else
+ #include <intrin.h>
+ #ifndef _WIN64
+ #ifndef __MMX__
+@@ -54,7 +48,6 @@
+ #ifndef __SSE2__
+ #define __SSE2__
+ #endif
+-#endif /* __clang__ */
+ #elif defined(__MINGW64_VERSION_MAJOR)
+ #include <intrin.h>
+ #else
+diff --git a/src/video/SDL_fillrect.c b/src/video/SDL_fillrect.c
+index ecea66e..a9a49ec 100644
+--- a/src/video/SDL_fillrect.c
++++ b/src/video/SDL_fillrect.c
+@@ -27,7 +27,7 @@
+ #ifdef __SSE__
+ /* *INDENT-OFF* */
+ 
+-#ifdef _MSC_VER
++#if defined(_MSC_VER) && !defined(__clang__)
+ #define SSE_BEGIN \
+     __m128 c128; \
+     c128.m128_u32[0] = color; \

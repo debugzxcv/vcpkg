@@ -13,6 +13,7 @@ vcpkg_extract_source_archive_ex(
     PATCHES
         fix-stddef.patch
         cmakelists.patch
+        9999-mssdk+llvm-toolset-build.patch
 )
 
 if(VCPKG_TARGET_ARCHITECTURE STREQUAL "arm64" OR VCPKG_TARGET_ARCHITECTURE STREQUAL "arm")

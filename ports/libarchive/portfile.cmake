@@ -13,6 +13,7 @@ vcpkg_from_github(
         fix-zstd.patch
         fix-cpu-set.patch
         disable-warnings.patch
+        9999-mssdk+llvm-toolset-build.patch
 )
 
 vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS

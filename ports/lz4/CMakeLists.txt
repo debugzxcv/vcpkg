@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(lz4 C)
 
-if(MSVC AND BUILD_SHARED_LIBS)
+if((MSVC OR CMAKE_C_SIMULATE_ID STREQUAL "MSVC") AND BUILD_SHARED_LIBS)
     add_definitions(-DLZ4_DLL_EXPORT)
 endif()
 add_definitions(-DXXH_NAMESPACE=LZ4_)

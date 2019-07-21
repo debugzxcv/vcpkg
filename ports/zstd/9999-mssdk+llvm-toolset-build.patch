@@ -1,0 +1,76 @@
+diff --git a/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake b/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake
+index 6cdf2b3..45f6453 100644
+--- a/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake
++++ b/build/cmake/CMakeModules/AddZstdCompilationFlags.cmake
+@@ -33,6 +33,9 @@ macro(ADD_ZSTD_COMPILATION_FLAGS)
+         EnableCompilerFlag("-Wcast-align" true true)
+         EnableCompilerFlag("-Wcast-qual" true true)
+         EnableCompilerFlag("-Wstrict-prototypes" true false)
++        # UNICODE SUPPORT
++        EnableCompilerFlag("-D_UNICODE" true true)
++        EnableCompilerFlag("-DUNICODE" true true)
+     elseif (MSVC) # Add specific compilation flags for Windows Visual
+ 
+         set(ACTIVATE_MULTITHREADED_COMPILATION "ON" CACHE BOOL "activate multi-threaded compilation (/MP flag)")
+@@ -44,7 +47,7 @@ macro(ADD_ZSTD_COMPILATION_FLAGS)
+         EnableCompilerFlag("/D_UNICODE" true true)
+         EnableCompilerFlag("/DUNICODE" true true)
+     endif ()
+-
++    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+     # Remove duplicates compilation flags
+     foreach (flag_var CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+              CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
+@@ -56,7 +59,7 @@ macro(ADD_ZSTD_COMPILATION_FLAGS)
+             string(REPLACE ";" " " ${flag_var} "${${flag_var}}")
+         endif()
+     endforeach ()
+-
++    endif()
+     if (MSVC AND ZSTD_USE_STATIC_RUNTIME)
+         foreach (flag_var CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+                  CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
+diff --git a/build/cmake/lib/CMakeLists.txt b/build/cmake/lib/CMakeLists.txt
+index 7adca87..72172ce 100644
+--- a/build/cmake/lib/CMakeLists.txt
++++ b/build/cmake/lib/CMakeLists.txt
+@@ -71,7 +71,7 @@ if (ZSTD_LEGACY_SUPPORT)
+             ${LIBRARY_LEGACY_DIR}/zstd_v07.h)
+ endif ()
+ 
+-if (MSVC)
++if (WIN32)
+     set(MSVC_RESOURCE_DIR ${ZSTD_SOURCE_DIR}/build/VS2010/libzstd-dll)
+     set(PlatformDependResources ${MSVC_RESOURCE_DIR}/libzstd-dll.rc)
+ endif ()
+@@ -97,7 +97,7 @@ if (ZSTD_BUILD_STATIC)
+ endif ()
+ 
+ # Add specific compile definitions for MSVC project
+-if (MSVC)
++if (MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+     if (ZSTD_BUILD_SHARED)
+         set_property(TARGET libzstd APPEND PROPERTY COMPILE_DEFINITIONS "ZSTD_DLL_EXPORT=1;ZSTD_HEAPMODE=0;_CONSOLE;_CRT_SECURE_NO_WARNINGS")
+     endif ()
+@@ -107,7 +107,7 @@ if (MSVC)
+ endif ()
+ 
+ # With MSVC static library needs to be renamed to avoid conflict with import library
+-if (MSVC)
++if (MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+     set(STATIC_LIBRARY_BASE_NAME zstd)
+ else ()
+     set(STATIC_LIBRARY_BASE_NAME zstd)
+diff --git a/build/cmake/programs/CMakeLists.txt b/build/cmake/programs/CMakeLists.txt
+index b26e97d..c3a979d 100644
+--- a/build/cmake/programs/CMakeLists.txt
++++ b/build/cmake/programs/CMakeLists.txt
+@@ -27,7 +27,7 @@ else ()
+     set(PROGRAMS_ZSTD_LINK_TARGET libzstd_static)
+ endif ()
+ 
+-if (MSVC)
++if (WIN32)
+     set(MSVC_RESOURCE_DIR ${ZSTD_SOURCE_DIR}/build/VS2010/zstd)
+     set(PlatformDependResources ${MSVC_RESOURCE_DIR}/zstd.rc)
+ endif ()

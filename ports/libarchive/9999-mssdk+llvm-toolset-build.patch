@@ -1,0 +1,26 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b051d37..b59550c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -715,6 +715,9 @@ ENDIF(ENABLE_CNG)
+ # Following files need windows.h, so we should test it after windows.h test.
+ LA_CHECK_INCLUDE_FILE("wincrypt.h" HAVE_WINCRYPT_H)
+ LA_CHECK_INCLUDE_FILE("winioctl.h" HAVE_WINIOCTL_H)
++if(WIN32)
++  LIST(APPEND ADDITIONAL_LIBS advapi32 user32)
++endif()
+ 
+ #
+ # Check whether use of __EXTENSIONS__ is safe.
+@@ -2025,9 +2028,9 @@ ENDIF(WIN32 AND NOT CYGWIN)
+ #
+ INCLUDE_DIRECTORIES(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/libarchive)
+ #
+-IF(MSVC)
++IF(WIN32)
+   ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
+-ENDIF(MSVC)
++ENDIF()
+ 
+ IF(APPLE)
+   # CC_MD5_Init() functions are deprecated on macOS 10.15, but we want to use them

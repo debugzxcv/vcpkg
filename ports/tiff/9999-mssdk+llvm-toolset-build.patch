@@ -1,0 +1,22 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9ccb9b3..fca2a46 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -600,12 +600,15 @@ check_include_file(OpenGL/glu.h HAVE_OPENGL_GLU_H)
+ 
+ # Win32 IO
+ set(USE_WIN32_FILEIO FALSE CACHE BOOL "")
+-if(MSVC)
++if(MSVC OR CMAKE_C_SIMULATE_ID STREQUAL "MSVC")
+   if (NOT CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")  #on UWP we use the unix I/O api
+     set(USE_WIN32_FILEIO TRUE CACHE BOOL "" FORCE)
+     add_definitions(-DUSE_WIN32_FILEIO)
+   endif()
+-  add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS /wd4996)
++  add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS)
++  if(MSVC)
++    add_definitions(/wd4996)
++  endif()
+ endif()
+ 
+ 
