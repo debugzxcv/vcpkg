@@ -9,7 +9,6 @@ vcpkg_extract_source_archive_ex(
     OUT_SOURCE_PATH SOURCE_PATH
     ARCHIVE ${ARCHIVE}
     PATCHES
-        export-symbols-only-in-shared-build.patch
         enable-winrt-cmake.patch
         disable-hidapi-for-uwp.patch
         fix-space-in-path.patch
