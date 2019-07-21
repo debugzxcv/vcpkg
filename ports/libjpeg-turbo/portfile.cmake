@@ -6,7 +6,7 @@ vcpkg_from_github(
     HEAD_REF master
     PATCHES
         add-options-for-exes-docs-headers.patch
-		
+		static-msvcrt.patch
         #workaround for vcpkg bug see #5697 on github for more information
         workaround_cmake_system_processor.patch
 )
