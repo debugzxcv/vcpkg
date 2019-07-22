@@ -1,0 +1,20 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 14edc04..f91f083 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -531,10 +531,13 @@ if ("${CMAKE_SYSTEM_NAME}" MATCHES "(Open|Free|Net)BSD")
+ endif()
+ target_compile_definitions(luajit PRIVATE ${LJ_DEFINITIONS})
+ 
+-set(luajit_headers lauxlib.h lua.h luaconf.h luajit.h lualib.h)
++set(luajit_headers lauxlib.h lua.h luaconf.h luajit.h lualib.h lua.hpp)
+ install(FILES ${luajit_headers} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/luajit)
+ install(TARGETS libluajit
++    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+ 
+-install(TARGETS luajit DESTINATION "${CMAKE_INSTALL_BINDIR}")
++if(NOT LUAJIT_SKIP_TOOLS)
++    install(TARGETS luajit DESTINATION tools/luajit)
++endif()

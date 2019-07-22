@@ -1,0 +1,13 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 05b2a5a..eda5c37 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -14,4 +14,8 @@ enable_language(ASM)
+ 
+ include (GNUInstallDirs)
+ 
++if(CMAKE_C_COMPILER_ID STREQUAL "MSVC" OR CMAKE_C_SIMULATE_ID STREQUAL "MSVC")
++  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
++endif()
++
+ add_subdirectory(src)

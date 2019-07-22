@@ -1,0 +1,13 @@
+Source: luajit
+Version: 2.1.0-beta3-2
+Homepage: https://github.com/WohlSoft/LuaJIT
+Description: LuaJIT is a Just-In-Time (JIT) compiler for the Lua programming language.
+
+Feature: tool
+Description: LuaJIT executable
+
+Feature: 52compat
+Description: Enable Lua 5.2 compatibility
+
+Feature: utf8fopen
+Description: Enforce UTF8 paths charset in fopen()/freopen() calls, even on Windows

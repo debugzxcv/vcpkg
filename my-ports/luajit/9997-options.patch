@@ -1,0 +1,23 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index f91f083..e6f5ebb 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -5,6 +5,7 @@ if (NOT ("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "${CMAKE_SYSTEM_NAME}"))
+   set(LJ_CROSSCOMPILING ON)
+ endif()
+ 
++set(LUAJIT_ENABLE_LUA52COMPAT OFF CACHE BOOL "Enable Lua 5.2 compatibility.")
+ set(LUAJIT_DISABLE_GC64 OFF CACHE BOOL "Disable GC64 mode for x64")
+ set(LUA_MULTILIB "lib" CACHE PATH "The name of lib directory." )
+ set(CMAKE_CROSSCOMPILING ${LJ_CROSSCOMPILING} CACHE BOOL "Cross-compiling")
+@@ -252,6 +253,10 @@ else()
+   set(TARGET_OS_FLAGS ${TARGET_OS_FLAGS} -D LUAJIT_OS=LUAJIT_OS_OTHER)
+ endif()
+ 
++if(LUAJIT_ENABLE_LUA52COMPAT)
++  set(LJ_DEFINITIONS ${LJ_DEFINITIONS} -DLUAJIT_ENABLE_LUA52COMPAT)
++endif()
++
+ if (LUAJIT_DISABLE_GC64)
+   set(LJ_DEFINITIONS ${LJ_DEFINITIONS} -DLUAJIT_DISABLE_GC64)
+   set(TARGET_ARCH ${TARGET_ARCH} -DLUAJIT_DISABLE_GC64)
