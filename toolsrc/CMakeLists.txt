@@ -69,6 +69,17 @@ if(APPLE)
     SET(CMAKE_CXX_ARCHIVE_FINISH "<CMAKE_RANLIB> -no_warning_for_no_symbols -c <TARGET>")
 endif()
 
+find_package(Git)
+if(Git_FOUND)
+    execute_process(
+        COMMAND
+            "${GIT_EXECUTABLE}" rev-parse --short HEAD:toolsrc
+        OUTPUT_VARIABLE VER_HASH
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    add_compile_definitions(VCPKG_VERSION=-${VER_HASH})
+endif()
+
 # ===============
 # === Targets ===
 # ===============
