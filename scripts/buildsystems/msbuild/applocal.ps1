@@ -44,6 +44,21 @@ catch [System.Management.Automation.ItemNotFoundException]
     return
 }
 
+$_dumpbin = (Get-Command dumpbin -ErrorAction SilentlyContinue).path
+$_clang = (Get-Command clang -ErrorAction SilentlyContinue).path
+if ([string]::IsNullOrEmpty($_dumpbin) -and -not ([string]::IsNullOrEmpty($_clang))) {
+    $_clang = &$_clang --version | ? { $_ -match "^InstalledDir: " } | % { $_ -replace "InstalledDir: ","" }
+}
+$_llvmlibs = @{
+    "libclang.dll" = $true
+    "libiomp5md.dll" = $true
+    "liblldb.dll" = $true
+    "libomp.dll" = $true
+    "LLVM-C.dll" = $true
+    "LTO.dll" = $true
+    "Remarks.dll" = $true
+}
+
 # Note: this function signature is depended upon by the qtdeploy.ps1 script
 function resolve([string]$targetBinary) {
     Write-Verbose "Resolving $targetBinary..."
@@ -56,8 +71,12 @@ function resolve([string]$targetBinary) {
         return
     }
     $targetBinaryDir = Split-Path $targetBinaryPath -parent
-
-    $a = $(dumpbin /DEPENDENTS $targetBinary | ? { $_ -match "^    [^ ].*\.dll" } | % { $_ -replace "^    ","" })
+    $a = ''
+    if ([string]::IsNullOrEmpty($_dumpbin) -and -not [string]::IsNullOrEmpty($_clang)) {
+        $a = $(llvm-objdump -p $targetBinary | ? { $_ -match "DLL Name:" } | % { $_.trim().substring(10) })
+    } else {
+        $a = $(dumpbin /DEPENDENTS $targetBinary | ? { $_ -match "^    [^ ].*\.dll" } | % { $_ -replace "^    ","" })
+    }
     $a | % {
         if ([string]::IsNullOrEmpty($_)) {
             return
@@ -67,8 +86,12 @@ function resolve([string]$targetBinary) {
             return
         }
         $g_searched.Set_Item($_, $true)
-        if (Test-Path "$installedDir\$_") {
-            deployBinary $baseTargetBinaryDir $installedDir "$_"
+        $srcDir = $installedDir
+        if ($_llvmlibs.ContainsKey($_)) {
+            $srcDir = $_clang
+        }
+        if ((Test-Path "$srcDir\$_")) {
+            deployBinary $baseTargetBinaryDir $srcDir "$_"
             if (Test-Path function:\deployPluginsIfQt) { deployPluginsIfQt $baseTargetBinaryDir "$g_install_root\plugins" "$_" }
             if (Test-Path function:\deployOpenNI2) { deployOpenNI2 $targetBinaryDir "$g_install_root" "$_" }
             if (Test-Path function:\deployPluginsIfMagnum) {
@@ -84,7 +107,7 @@ function resolve([string]$targetBinary) {
             Write-Verbose "  ${_}: $_ not found in vcpkg; locally deployed"
             resolve "$targetBinaryDir\$_"
         } else {
-            Write-Verbose "  ${_}: $installedDir\$_ not found"
+            Write-Verbose "  ${_}: $srcDir\$_ not found"
         }
     }
     Write-Verbose "Done Resolving $targetBinary."

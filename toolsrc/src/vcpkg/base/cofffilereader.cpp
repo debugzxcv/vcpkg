@@ -274,15 +274,16 @@ namespace vcpkg::CoffFileReader
         marker.advance_by(ArchiveMemberHeader::HEADER_SIZE + first_linker_member_header.member_size());
         marker.seek_to_marker(fs);
 
-        const ArchiveMemberHeader second_linker_member_header = ArchiveMemberHeader::read(fs);
-        Checks::check_exit(VCPKG_LINE_INFO,
-                           second_linker_member_header.name().substr(0, 2) == "/ ",
-                           "Could not find proper second linker member");
-        // The first 4 bytes contains the number of archive members
-        const auto archive_member_count = read_value_from_stream<uint32_t>(fs);
-        const OffsetsArray offsets = OffsetsArray::read(fs, archive_member_count);
-        marker.advance_by(ArchiveMemberHeader::HEADER_SIZE + second_linker_member_header.member_size());
-        marker.seek_to_marker(fs);
+        const bool has_second_linker_member_header = peek_value_from_stream<uint16_t>(fs) == 0x2F20;
+        OffsetsArray offsets{};
+        if (has_second_linker_member_header) {
+            const ArchiveMemberHeader second_linker_member_header = ArchiveMemberHeader::read(fs);
+            // The first 4 bytes contains the number of archive members
+            const auto archive_member_count = read_value_from_stream<uint32_t>(fs);
+            offsets = OffsetsArray::read(fs, archive_member_count);
+            marker.advance_by(ArchiveMemberHeader::HEADER_SIZE + second_linker_member_header.member_size());
+            marker.seek_to_marker(fs);
+        }
 
         const bool has_longname_member_header = peek_value_from_stream<uint16_t>(fs) == 0x2F2F;
         if (has_longname_member_header)
@@ -290,6 +291,10 @@ namespace vcpkg::CoffFileReader
             const ArchiveMemberHeader longnames_member_header = ArchiveMemberHeader::read(fs);
             marker.advance_by(ArchiveMemberHeader::HEADER_SIZE + longnames_member_header.member_size());
             marker.seek_to_marker(fs);
+        }
+
+        if (offsets.data.size() == 0) {
+            offsets.data.push_back(static_cast<uint32_t>(fs.tellg()));
         }
 
         std::set<MachineType> machine_types;

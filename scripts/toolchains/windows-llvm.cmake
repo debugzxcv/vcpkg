@@ -1,0 +1,43 @@
+if(NOT _VCPKG_WINDOWS_TOOLCHAIN)
+set(_VCPKG_WINDOWS_TOOLCHAIN 1)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>$<$<STREQUAL:${VCPKG_CRT_LINKAGE},dynamic>:DLL>" CACHE STRING "")
+
+get_property( _CMAKE_IN_TRY_COMPILE GLOBAL PROPERTY IN_TRY_COMPILE )
+if(NOT _CMAKE_IN_TRY_COMPILE)
+    if(VCPKG_CRT_LINKAGE STREQUAL "dynamic")
+        set(VCPKG_CRT_LINK_FLAG_PREFIX "-D_MT -D_DLL -Xclang --dependent-lib=msvcrt")
+        # set(CMAKE_POLICY_DEFAULT_CMP0091 NEW CACHE INTERNAL "")
+        # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL$<$<CONFIG:Debug>:Debug>" CACHE STRING "")
+    elseif(VCPKG_CRT_LINKAGE STREQUAL "static")
+        set(VCPKG_CRT_LINK_FLAG_PREFIX "-D_MT -Xclang -flto-visibility-public-std -Xclang --dependent-lib=libcmt")
+        # set(CMAKE_POLICY_DEFAULT_CMP0091 NEW CACHE INTERNAL "")
+        # set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "")
+    else()
+        message(FATAL_ERROR "Invalid setting for VCPKG_CRT_LINKAGE: \"${VCPKG_CRT_LINKAGE}\". It must be \"static\" or \"dynamic\"")
+    endif()
+
+    # cmake_policy(SET CMP0069 NEW)
+    # include(CheckIPOSupported)
+    # check_ipo_supported()
+    # set(CMAKE_POLICY_DEFAULT_CMP0069 NEW CACHE INTERNAL "")
+    # set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON CACHE INTERNAL "")
+
+    set(CMAKE_CXX_FLAGS "-DWIN32 -D_WINDOWS -Wall -fexceptions -fcxx-exceptions -Xclang -fexternc-nounwind ${VCPKG_CXX_FLAGS}" CACHE STRING "")
+    set(CMAKE_C_FLAGS "-DWIN32 -D_WINDOWS -Wall ${VCPKG_C_FLAGS}" CACHE STRING "")
+    # set(CMAKE_RC_FLAGS "-c65001 -DWIN32" CACHE STRING "")
+
+    set(CMAKE_CXX_FLAGS_DEBUG "-D_DEBUG ${VCPKG_CRT_LINK_FLAG_PREFIX}d -g -Xclang -gcodeview -Xclang -gcodeview-ghash -flimit-debug-info -fno-inline -O0 ${VCPKG_CXX_FLAGS_DEBUG}" CACHE STRING "")
+    set(CMAKE_C_FLAGS_DEBUG "-D_DEBUG ${VCPKG_CRT_LINK_FLAG_PREFIX}d -g -Xclang -gcodeview -Xclang -gcodeview-ghash -flimit-debug-info -fno-inline -O0 ${VCPKG_C_FLAGS_DEBUG}" CACHE STRING "")
+    set(CMAKE_CXX_FLAGS_RELEASE "${VCPKG_CRT_LINK_FLAG_PREFIX} -O2 -fbuiltin -ffunction-sections -DNDEBUG -g -Xclang -gcodeview -Xclang -gcodeview-ghash -flimit-debug-info ${VCPKG_CXX_FLAGS_RELEASE}" CACHE STRING "")
+    set(CMAKE_C_FLAGS_RELEASE "${VCPKG_CRT_LINK_FLAG_PREFIX} -O2 -fbuiltin -ffunction-sections -DNDEBUG -g -Xclang -gcodeview -Xclang -gcodeview-ghash -flimit-debug-info ${VCPKG_C_FLAGS_RELEASE}" CACHE STRING "")
+
+    set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "-Wl,-DEBUG:GHASH,-INCREMENTAL:NO,-OPT:REF,-OPT:ICF ${VCPKG_LINKER_FLAGS}" CACHE STRING "")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-DEBUG:GHASH,-INCREMENTAL:NO,-OPT:REF,-OPT:ICF ${VCPKG_LINKER_FLAGS}" CACHE STRING "")
+
+    unset(VCPKG_CRT_LINK_FLAG_PREFIX)
+
+    # if(NOT CMAKE_RC_COMPILER)
+    #     find_program(CMAKE_RC_COMPILER "llvm-rc")
+    # endif()
+endif()
+endif()

@@ -103,6 +103,22 @@ if(NOT DEFINED CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO)
     endif()
 endif()
 
+if(NOT DEFINED _VCPKG_ROOT_DIR)
+    # Detect .vcpkg-root to figure VCPKG_ROOT_DIR
+    set(_VCPKG_ROOT_DIR_CANDIDATE ${CMAKE_CURRENT_LIST_DIR})
+    while(IS_DIRECTORY ${_VCPKG_ROOT_DIR_CANDIDATE} AND NOT EXISTS "${_VCPKG_ROOT_DIR_CANDIDATE}/.vcpkg-root")
+        get_filename_component(_VCPKG_ROOT_DIR_TEMP ${_VCPKG_ROOT_DIR_CANDIDATE} DIRECTORY)
+        if (_VCPKG_ROOT_DIR_TEMP STREQUAL _VCPKG_ROOT_DIR_CANDIDATE) # If unchanged, we have reached the root of the drive
+            message(FATAL_ERROR "Could not find .vcpkg-root")
+        else()
+            SET(_VCPKG_ROOT_DIR_CANDIDATE ${_VCPKG_ROOT_DIR_TEMP})
+        endif()
+    endwhile()
+    set(_VCPKG_ROOT_DIR ${_VCPKG_ROOT_DIR_CANDIDATE} CACHE INTERNAL "Vcpkg root directory")
+endif()
+include(${_VCPKG_ROOT_DIR}/scripts/cmake/vcpkg_llvm_clang.cmake)
+_vcpkg_llvm_clang(_VCPKG_CLANG_DIR _VCPKG_TARGET_TRIPLET_ARCH)
+
 if(VCPKG_TARGET_TRIPLET)
     # This is required since a user might do: 'set(VCPKG_TARGET_TRIPLET somevalue)' [no CACHE] before the first project() call
     # Latter within the toolchain file we do: 'set(VCPKG_TARGET_TRIPLET somevalue CACHE STRING "")' which
@@ -185,6 +201,8 @@ else()
         elseif(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
             set(_VCPKG_TARGET_TRIPLET_ARCH arm64)
         else()
+            if(_VCPKG_CLANG_DIR AND _VCPKG_TARGET_TRIPLET_ARCH)
+            else()
             if( _CMAKE_IN_TRY_COMPILE )
                 message(STATUS "Unable to determine target architecture, continuing without vcpkg.")
             else()
@@ -192,9 +210,12 @@ else()
             endif()
             set(VCPKG_TOOLCHAIN ON)
             return()
+            endif()
         endif()
     endif()
 endif()
+
+# message(WARNING "test: ${_VCPKG_CLANG_DIR}; ${_VCPKG_TARGET_TRIPLET_ARCH}")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore" OR CMAKE_SYSTEM_NAME STREQUAL "WindowsPhone")
     set(_VCPKG_TARGET_TRIPLET_PLAT uwp)
@@ -206,6 +227,9 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(_VCPKG_TARGET_TRIPLET_PLAT ios)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows" OR (NOT CMAKE_SYSTEM_NAME AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows"))
     set(_VCPKG_TARGET_TRIPLET_PLAT windows)
+    if(_VCPKG_CLANG_DIR)
+        set(_VCPKG_TARGET_TRIPLET_PLAT "${_VCPKG_TARGET_TRIPLET_PLAT}-llvm")
+    endif()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR (NOT CMAKE_SYSTEM_NAME AND CMAKE_HOST_SYSTEM_NAME STREQUAL "FreeBSD"))
     set(_VCPKG_TARGET_TRIPLET_PLAT freebsd)
 endif()
@@ -396,6 +420,7 @@ endif()
 option(VCPKG_APPLOCAL_DEPS "Automatically copy dependencies into the output directory for executables." ON)
 option(X_VCPKG_APPLOCAL_DEPS_SERIALIZED "(experimental) Add USES_TERMINAL to VCPKG_APPLOCAL_DEPS to force serialization." OFF)
 function(add_executable name)
+    cmake_policy(SET CMP0069 NEW)
     _add_executable(${ARGV})
     list(FIND ARGV "IMPORTED" IMPORTED_IDX)
     list(FIND ARGV "ALIAS" ALIAS_IDX)
@@ -407,6 +432,16 @@ function(add_executable name)
                 if(X_VCPKG_APPLOCAL_DEPS_SERIALIZED)
                     set(EXTRA_OPTIONS USES_TERMINAL)
                 endif()
+                if(VCPKG_TARGET_TRIPLET MATCHES "-windows-llvm$")
+                add_custom_command(TARGET ${name} POST_BUILD
+                    COMMAND
+                        ${CMAKE_COMMAND}
+                            -D APPLOCAL_targetBinary=$<TARGET_FILE:${name}>
+                            -D APPLOCAL_installedDir="${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin"
+                            -D APPLOCAL_clangInstalledDir="${_VCPKG_CLANG_DIR}"
+                            -P ${_VCPKG_TOOLCHAIN_DIR}/applocal.cmake
+                )
+                else()
                 add_custom_command(TARGET ${name} POST_BUILD
                     COMMAND powershell -noprofile -executionpolicy Bypass -file ${_VCPKG_TOOLCHAIN_DIR}/msbuild/applocal.ps1
                         -targetBinary $<TARGET_FILE:${name}>
@@ -414,6 +449,7 @@ function(add_executable name)
                         -OutVariable out
                     ${EXTRA_OPTIONS}
                 )
+                endif()
             elseif(_VCPKG_TARGET_TRIPLET_PLAT MATCHES "osx")
                 if (NOT MACOSX_BUNDLE_IDX EQUAL -1)
                     add_custom_command(TARGET ${name} POST_BUILD
@@ -430,6 +466,7 @@ function(add_executable name)
 endfunction()
 
 function(add_library name)
+    cmake_policy(SET CMP0069 NEW)
     _add_library(${ARGV})
     list(FIND ARGV "IMPORTED" IMPORTED_IDX)
     list(FIND ARGV "INTERFACE" INTERFACE_IDX)
@@ -437,12 +474,23 @@ function(add_library name)
     if(IMPORTED_IDX EQUAL -1 AND INTERFACE_IDX EQUAL -1 AND ALIAS_IDX EQUAL -1)
         get_target_property(IS_LIBRARY_SHARED ${name} TYPE)
         if(VCPKG_APPLOCAL_DEPS AND _VCPKG_TARGET_TRIPLET_PLAT MATCHES "windows|uwp" AND (IS_LIBRARY_SHARED STREQUAL "SHARED_LIBRARY" OR IS_LIBRARY_SHARED STREQUAL "MODULE_LIBRARY"))
+            if(VCPKG_TARGET_TRIPLET MATCHES "-windows-llvm$")
+            add_custom_command(TARGET ${name} POST_BUILD
+                COMMAND
+                    ${CMAKE_COMMAND}
+                        -D APPLOCAL_targetBinary=$<TARGET_FILE:${name}>
+                        -D APPLOCAL_installedDir="${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin"
+                        -D APPLOCAL_clangInstalledDir="${_VCPKG_CLANG_DIR}"
+                        -P ${_VCPKG_TOOLCHAIN_DIR}/applocal.cmake
+            )
+            else()
             add_custom_command(TARGET ${name} POST_BUILD
                 COMMAND powershell -noprofile -executionpolicy Bypass -file ${_VCPKG_TOOLCHAIN_DIR}/msbuild/applocal.ps1
                     -targetBinary $<TARGET_FILE:${name}>
                     -installedDir "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}$<$<CONFIG:Debug>:/debug>/bin"
                     -OutVariable out
             )
+            endif()
         endif()
         set_target_properties(${name} PROPERTIES VS_USER_PROPS do_not_import_user.props)
         set_target_properties(${name} PROPERTIES VS_GLOBAL_VcpkgEnabled false)
