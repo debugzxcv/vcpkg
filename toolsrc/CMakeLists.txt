@@ -125,6 +125,11 @@ add_executable(vcpkg ${VCPKG_SOURCES})
 target_link_libraries(vcpkg PRIVATE vcpkglib)
 vcpkg_target_add_warning_options(vcpkg)
 
+add_custom_command(TARGET vcpkg
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:vcpkg> "${CMAKE_CURRENT_LIST_DIR}/.."
+)
+
 # === Target: vcpkg-test ===
 
 if (BUILD_TESTING)
