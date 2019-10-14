@@ -1,0 +1,13 @@
+diff --git a/source/SoundTouchDLL/SoundTouchDLL.rc b/source/SoundTouchDLL/SoundTouchDLL.rc
+index 7ef95ae..275a955 100644
+--- a/source/SoundTouchDLL/SoundTouchDLL.rc
++++ b/source/SoundTouchDLL/SoundTouchDLL.rc
+@@ -7,7 +7,7 @@
+ //
+ // Generated from the TEXTINCLUDE 2 resource.
+ //
+-#include "afxres.h"
++#include "winresrc.h"
+ 
+ /////////////////////////////////////////////////////////////////////////////
+ #undef APSTUDIO_READONLY_SYMBOLS
